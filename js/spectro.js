@@ -29,6 +29,7 @@ var audioCtx = new (window.AudioContext || window.webkitAudioContext)() ;
 var analyser = audioCtx.createAnalyser();
 
 var NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+var dataGlob;
 
 //Get audio input through microphone
 try {
@@ -62,15 +63,53 @@ function drawSpectro(){
 	bufferSize = analyser.frequencyBinCount;
 	var data = new Float32Array(bufferSize); 
 	analyser.getFloatFrequencyData(data);
-
+	
+	var peaks = getPeaks(data, -60)
+	peaks = peaks[1];
+	
 	var binWidth = 1;//Math.floor(c.width / (data.length/2));
 	var HEIGHT_MULT = 5;
-	
+	var xOffset = 40;
+	var yOffset = c.height - 20;
+	var bin2Freq = audioCtx.sampleRate/2/bufferSize		//Factor to convert bin to frequency
+
 	for (var i = 0; i < data.length; i++){
-		canvasCtx.fillRect(i, c.height, binWidth, (100 + data[i]) * -1 * HEIGHT_MULT);
+		var barHeight = (100 + data[i]) * -1 * HEIGHT_MULT;
+
+		if(peaks.indexOf(i) != -1) {
+			var freq = (i * bin2Freq).toFixed(1);	//With no interpolation
+			canvasCtx.fillStyle = "red";
+			canvasCtx.font="8px Verdana";
+			canvasCtx.fillText(freq + "Hz", i + 5 + xOffset, c.height + barHeight - 7);	
+		}
+
+		canvasCtx.fillRect(i + xOffset, yOffset, binWidth, barHeight);
+		canvasCtx.fillStyle = "black";
 	}
 
+	//Leyends
+	canvasCtx.fillStyle = "white";
+	canvasCtx.fillRect(0, yOffset, c.width, yOffset + c.height);	//Clean space beneath offset
 	
+	canvasCtx.fillStyle = "black";
+	canvasCtx.font="10px Verdana";
+	
+	//Horizontal
+	for (var i = xOffset; i < c.width; i+=50) {
+		var freq = Math.round((i - xOffset + 1) * bin2Freq);
+		
+		canvasCtx.fillRect(i, yOffset, 1, 5);
+		canvasCtx.fillText(freq, i - 10, yOffset + 15);		
+	}
+
+	//Vertical
+	for(var i = yOffset; i > 0; i-=50){
+		var dBs = Math.round(-(i * 100 / yOffset));
+		canvasCtx.fillRect(xOffset, i, -5, 1);
+		canvasCtx.fillText(dBs, 12, i + 5);
+	}
+
+	dataGlob = data;
 	
 }
 
