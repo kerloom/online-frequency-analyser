@@ -77,7 +77,10 @@ function drawSpectro(){
 		var barHeight = (100 + data[i]) * -1 * HEIGHT_MULT;
 
 		if(peaks.indexOf(i) != -1) {
-			var freq = (i * bin2Freq).toFixed(1);	//With no interpolation
+			var pk = peaks[peaks.indexOf(i)];
+			var peak = peakInterpolate(pk-1, data[pk-1], pk, data[pk], pk+1, data[pk+1])[0];
+			var freq = (peak * bin2Freq).toFixed(1);
+
 			canvasCtx.fillStyle = "red";
 			canvasCtx.font="8px Verdana";
 			canvasCtx.fillText(freq + "Hz", i + 5 + xOffset, c.height + barHeight - 7);	
